@@ -31,7 +31,7 @@ async function run() {
 
         const userCollection = client.db('groupStudyDB').collection('users');
         const assignmentCollection = client.db('groupStudyDB').collection('assignments');
-        const submittedAssignmentsCollection= client.db('groupStudyDB').collection('submittedAssignments')
+        const submittedAssignmentsCollection = client.db('groupStudyDB').collection('submittedAssignments')
 
         //Created Assignments
         //read all data
@@ -41,7 +41,7 @@ async function run() {
             res.send(result);
         })
 
-        
+
 
         //Assignment data created or posted
         app.post('/assignments', async (req, res) => {
@@ -60,14 +60,14 @@ async function run() {
         })
 
         //putting or updating data
-        app.put('/assignments/:id',async(req,res)=>{
+        app.put('/assignments/:id', async (req, res) => {
             const id = req.params.id;
-            const filter = {_id: new ObjectId(id)};
-            const option = {upsert: true};
+            const filter = { _id: new ObjectId(id) };
+            const option = { upsert: true };
             const updatedAssignment = req.body;
             const assignment = {
-                $set:{
-                    title : updatedAssignment.title,
+                $set: {
+                    title: updatedAssignment.title,
                     marks: updatedAssignment.marks,
                     level: updatedAssignment.level,
                     category: updatedAssignment.category,
@@ -76,21 +76,38 @@ async function run() {
                     description: updatedAssignment.description,
                 }
             }
-            const result = await assignmentCollection.updateOne(filter,assignment,option);
+            const result = await assignmentCollection.updateOne(filter, assignment, option);
             res.send(result);
         })
 
         //Delete Assignment Data
-        app.delete('/assignments/:id', async(req,res)=>{
+        app.delete('/assignments/:id', async (req, res) => {
             const id = req.params.id;
-            const query = {_id: new ObjectId(id)};
-            const result =await assignmentCollection.deleteOne(query);
+            const query = { _id: new ObjectId(id) };
+            const result = await assignmentCollection.deleteOne(query);
             res.send(result);
         })
-//submitted assignments related api
-        app.post('/submittedAssignments', async(req,res)=>{
+        //submitted assignments related api
+        app.post('/submittedAssignments', async (req, res) => {
             const submittedAssignment = req.body;
             const result = await submittedAssignmentsCollection.insertOne(submittedAssignment);
+            res.send(result);
+        })
+        
+        // getting submitted data as per query
+        app.get('/submittedAssignments', async (req, res) => {
+            console.log(req.query.status);
+            let query={};
+            if (req.query?.status){
+                query = { status: req.query?.status }
+            }
+            const result = await submittedAssignmentsCollection.find(query).toArray();
+            res.send(result);
+        })
+        //getting all submitted data
+        app.get('/submittedAssignments', async (req, res) => {
+            const cursor = submittedAssignmentsCollection.find();
+            const result = await cursor.toArray();
             res.send(result);
         })
 
