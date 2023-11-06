@@ -104,6 +104,14 @@ async function run() {
             const result = await submittedAssignmentsCollection.find(query).toArray();
             res.send(result);
         })
+        // getting submitted data by id
+        app.get('/submittedAssignments/:id', async(req,res)=>{
+            const id = req.params.id;
+            const query = {_id: new ObjectId(id)};
+            const result = await submittedAssignmentsCollection.findOne(query);
+            res.send(result);
+        })
+
         //getting all submitted data
         app.get('/submittedAssignments', async (req, res) => {
             const cursor = submittedAssignmentsCollection.find();
