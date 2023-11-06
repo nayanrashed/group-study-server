@@ -31,6 +31,7 @@ async function run() {
 
         const userCollection = client.db('groupStudyDB').collection('users');
         const assignmentCollection = client.db('groupStudyDB').collection('assignments');
+        const submittedAssignmentsCollection= client.db('groupStudyDB').collection('submittedAssignments')
 
         //Created Assignments
         //read all data
@@ -86,7 +87,12 @@ async function run() {
             const result =await assignmentCollection.deleteOne(query);
             res.send(result);
         })
-
+//submitted assignments related api
+        app.post('/submittedAssignments', async(req,res)=>{
+            const submittedAssignment = req.body;
+            const result = await submittedAssignmentsCollection.insertOne(submittedAssignment);
+            res.send(result);
+        })
 
 
 
