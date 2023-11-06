@@ -40,11 +40,42 @@ async function run() {
             res.send(result);
         })
 
+        
+
         //Assignment data created or posted
         app.post('/assignments', async (req, res) => {
             const newAssignment = req.body;
             console.log(newAssignment);
             const result = await assignmentCollection.insertOne(newAssignment);
+            res.send(result);
+        })
+        // Reading Data of a particular item by its ID
+        app.get('/assignments/:id', async (req, res) => {
+            const id = req.params.id;
+            console.log(id);
+            const query = { _id: new ObjectId(id) };
+            const result = await assignmentCollection.findOne(query);
+            res.send(result);
+        })
+
+        //putting or updating data
+        app.put('/assignments/:id',async(req,res)=>{
+            const id = req.params.id;
+            const filter = {_id: new ObjectId(id)};
+            const option = {upsert: true};
+            const updatedAssignment = req.body;
+            const assignment = {
+                $set:{
+                    title : updatedAssignment.title,
+                    marks: updatedAssignment.marks,
+                    level: updatedAssignment.level,
+                    category: updatedAssignment.category,
+                    date: updatedAssignment.date,
+                    imageURL: updatedAssignment.imageURL,
+                    description: updatedAssignment.description,
+                }
+            }
+            const result = await assignmentCollection.updateOne(filter,assignment,option);
             res.send(result);
         })
 
@@ -55,6 +86,8 @@ async function run() {
             const result =await assignmentCollection.deleteOne(query);
             res.send(result);
         })
+
+
 
 
         // Send a ping to confirm a successful connection
