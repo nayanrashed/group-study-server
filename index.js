@@ -118,6 +118,23 @@ async function run() {
             const result = await cursor.toArray();
             res.send(result);
         })
+        //Updating submitted assignment data for give mark
+        app.put('/submittedAssignments/:id', async(req,res)=>{
+            const id = req.params.id;
+            const filter = {_id: new ObjectId(id)};
+            const option = {upsert:true};
+            const updatedSubmittedAssignment = req.body;
+            const submittedAssignment = {
+                $set:{
+                    givenMarks: updatedSubmittedAssignment.givenMarks,
+                    feedback: updatedSubmittedAssignment.feedback,
+                    examinerEmail: updatedSubmittedAssignment.examinerEmail,
+                    status: updatedSubmittedAssignment.status,
+                }
+            }
+            const result = await submittedAssignmentsCollection.updateOne(filter,submittedAssignment,option);
+            res.send(result);
+        })
 
 
 
