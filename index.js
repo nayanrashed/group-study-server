@@ -94,12 +94,22 @@ async function run() {
             res.send(result);
         })
         
-        // getting submitted data as per query
+        // getting submitted data as per query:status
         app.get('/submittedAssignments', async (req, res) => {
             console.log(req.query.status);
             let query={};
             if (req.query?.status){
                 query = { status: req.query?.status }
+            }
+            const result = await submittedAssignmentsCollection.find(query).toArray();
+            res.send(result);
+        })
+        // getting submitted data as per query:submitterEmail
+        app.get('/submittedAssignments', async (req, res) => {
+            console.log(req.query.submitterEmail);
+            let query = {};
+            if (req.query?.submitterEmail) {
+                query = { status: req.query?.submitterEmail }
             }
             const result = await submittedAssignmentsCollection.find(query).toArray();
             res.send(result);
