@@ -10,13 +10,14 @@ const port = process.env.PORT || 5000;
 //middleware
 app.use(cors({
     origin: [
-        'http://localhost:5173'
+        'http://localhost:5173',
+        'https://group-study-rashed.web.app',
+        'https://group-study-rashed.firebaseapp.com',
     ],
-    credentials: true
+    credentials: true,
 }));
 app.use(express.json());
 app.use(cookieParser());
-
 
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.oz2ylzg.mongodb.net/?retryWrites=true&w=majority`;
 
@@ -30,31 +31,32 @@ const client = new MongoClient(uri, {
 });
 
 //middlewares
-const logger= (req,res,next)=>{
-    console.log('log info:',req.method, req.url);
+const logger = (req, res, next) => {
+    console.log('log info:', req.method, req.url);
     next();
 }
 
-const verifyToken=(req,res,next)=>{
+const verifyToken = (req, res, next) => {
     const token = req?.cookies?.token;
     // console.log('token in the middleware', token);
-    if(!token){
-        return res.status(401).send({message: 'unauthorized access'})
+    if (!token) {
+        return res.status(401).send({ message: 'unauthorized access' })
     }
-    jwt.verify(token,process.env.ACCESS_TOKEN_SECRET, (err,decoded)=>{
-        if(err){
+    jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, (err, decoded) => {
+        if (err) {
+            console.log(err)
             return res.status(401).send({ message: 'unauthorized access' })
         }
-        req.user=decoded;
-        next()
+        req.user = decoded;
+        next();
     })
-   
+
 }
 
 async function run() {
     try {
         // Connect the client to the server	(optional starting in v4.7)
-        await client.connect();
+        // await client.connect();
 
         const userCollection = client.db('groupStudyDB').collection('users');
         const assignmentCollection = client.db('groupStudyDB').collection('assignments');
@@ -62,18 +64,18 @@ async function run() {
 
 
         //========Auth Related APIs=========
-        app.post('/jwt',logger, async (req, res) => {
+        app.post('/jwt', logger, async (req, res) => {
             const user = req.body;
             console.log('user for token:', user);
-            const token = jwt.sign(user, process.env.ACCESS_TOKEN_SECRET, { expiresIn: '2h' })
+            const token = jwt.sign(user, process.env.ACCESS_TOKEN_SECRET, { expiresIn: '1h' })
             res.cookie('token', token, {
                 httpOnly: true,
-                secure: true,
-                samSite: 'none'
+                secure: true, //will be true for production
+                samSite: none,
             })
             res.send({ Success: true });
         })
-
+        //clear cookie
         app.post('/logout', async (req, res) => {
             const user = req.body;
             console.log('logging out', user);
@@ -88,17 +90,17 @@ async function run() {
             const cursor = assignmentCollection.find();
             const result = await cursor.toArray();
             res.send(result);
-        })    
+        })
 
         //-------Assignment data created or posted--------
-        app.post('/assignments', logger, verifyToken, async (req, res) => {
+        app.post('/assignments', async (req, res) => {
             const newAssignment = req.body;
             console.log(newAssignment);
             const result = await assignmentCollection.insertOne(newAssignment);
             res.send(result);
         })
         //-------- Reading Data of a particular item by its ID-------
-        app.get('/assignments/:id', logger, verifyToken, async (req, res) => {
+        app.get('/assignments/:id', async (req, res) => {
             const id = req.params.id;
             console.log(id);
             const query = { _id: new ObjectId(id) };
@@ -107,7 +109,7 @@ async function run() {
         })
 
         //--------putting or updating data-------
-        app.put('/assignments/:id', logger, verifyToken, async (req, res) => {
+        app.put('/assignments/:id', async (req, res) => {
             const id = req.params.id;
             const filter = { _id: new ObjectId(id) };
             const option = { upsert: true };
@@ -128,7 +130,7 @@ async function run() {
         })
 
         //-------Delete Assignment Data-------
-        app.delete('/assignments/:id', logger, verifyToken, async (req, res) => {
+        app.delete('/assignments/:id', async (req, res) => {
             const id = req.params.id;
             const query = { _id: new ObjectId(id) };
             const result = await assignmentCollection.deleteOne(query);
@@ -136,29 +138,9 @@ async function run() {
         })
         // ========Submitted Assignments Related APIs=======
         //-------submitted assignments POST related api--------
-        app.post('/submittedAssignments', logger, verifyToken, async (req, res) => {
+        app.post('/submittedAssignments', async (req, res) => {
             const submittedAssignment = req.body;
             const result = await submittedAssignmentsCollection.insertOne(submittedAssignment);
-            res.send(result);
-        })
-
-        //--------getting submitted data as per query:status--------
-        app.get('/submittedAssignments', logger, verifyToken, async (req, res) => {
-            console.log(req.query.status);
-            console.log("token owner info",req.user)
-            let query = {};
-            if (req.query?.status) {
-                query = { status: req.query?.status }
-            }
-            const result = await submittedAssignmentsCollection.find(query).toArray();
-            res.send(result);
-        })       
-
-        //--------getting submitted data by id--------
-        app.get('/submittedAssignments/:id', async (req, res) => {
-            const id = req.params.id;
-            const query = { _id: new ObjectId(id) };
-            const result = await submittedAssignmentsCollection.findOne(query);
             res.send(result);
         })
 
@@ -168,6 +150,27 @@ async function run() {
             const result = await cursor.toArray();
             res.send(result);
         })
+
+        //--------getting submitted data as per query:status--------
+        app.get('/submittedAssignments', logger, verifyToken, async (req, res) => {
+            console.log(req.query.status);
+            console.log("token owner info", req.user)
+            let query = {};
+            if (req.query?.status) {
+                query = { status: req.query?.status }
+            }
+            const result = await submittedAssignmentsCollection.find(query).toArray();
+            res.send(result);
+        })
+
+        //--------getting submitted data by id--------
+        app.get('/submittedAssignments/:id', async (req, res) => {
+            const id = req.params.id;
+            const query = { _id: new ObjectId(id) };
+            const result = await submittedAssignmentsCollection.findOne(query);
+            res.send(result);
+        })
+
         //--------Updating submitted assignment data for "GIVE MARK"-------
         app.put('/submittedAssignments/:id', async (req, res) => {
             const id = req.params.id;
@@ -187,7 +190,7 @@ async function run() {
         })
 
         // Send a ping to confirm a successful connection
-        await client.db("admin").command({ ping: 1 });
+        // await client.db("admin").command({ ping: 1 });
         console.log("Pinged your deployment. You successfully connected to MongoDB!");
     } finally {
         // Ensures that the client will close when you finish/error
