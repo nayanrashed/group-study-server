@@ -13,6 +13,8 @@ app.use(cors({
         'http://localhost:5173',
         'https://group-study-rashed.web.app',
         'https://group-study-rashed.firebaseapp.com',
+        'https://655239bdbb6b0a122928a8be--spiffy-gelato-3ac630.netlify.app',
+
     ],
     credentials: true,
 }));
@@ -71,7 +73,7 @@ async function run() {
             res.cookie('token', token, {
                 httpOnly: true,
                 secure: true, //will be true for production
-                samSite: none,
+                samSite: 'none',
             })
             res.send({ Success: true });
         })
@@ -152,7 +154,7 @@ async function run() {
         })
 
         //--------getting submitted data as per query:status--------
-        app.get('/submittedAssignments', logger, verifyToken, async (req, res) => {
+        app.get('/submittedAssignments',logger,verifyToken, async (req, res) => {
             console.log(req.query.status);
             console.log("token owner info", req.user)
             let query = {};
